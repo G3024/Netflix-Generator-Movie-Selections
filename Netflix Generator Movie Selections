@@ -1,0 +1,107 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = pd.read_csv('netflix.csv',  encoding='unicode_escape')
+from sklearn.preprocessing import LabelEncoder
+
+
+LE_ = LabelEncoder()
+
+def check_isna(data):
+    data = pd.isnull(data)
+    print(data)
+
+for i in data:
+    data[i] = LE_.fit_transform(data[i])
+
+'''for i in data:
+    if data[i].any() == False:
+        data[i].drop(data[i], axis='columns')
+    else:
+        continue
+'''
+
+from sklearn.cluster import KMeans
+'''kmeans = KMeans(n_clusters=12)
+kmeans.fit_predict(data)'''
+inertias = []
+
+for i in data:
+    kmeans = KMeans(n_clusters=12)
+    kmeans_fit_predict = kmeans.fit_predict(data)
+    ''' RANDOM
+    [ 0  9  6 ...  5  5 10]
+[0 6 1 ... 4 4 3]
+[10  4  2 ...  3  7  3]
+    '''
+
+
+sse = []
+k_rng = range(1,10)
+for k in k_rng:
+    km = KMeans(n_clusters=k)
+    km.fit(data)
+    sse.append(km.inertia_)
+    
+    
+plt.xlabel('K')
+plt.ylabel('Sum of squared error')
+plt.plot(k_rng, sse)
+plt.scatter(k_rng, sse)
+
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(kmeans_fit_predict, data, train_size=0.2, random_state=0)
+# Xtrain size = 1761
+# Xtest size = 7048
+from sklearn.ensemble import RandomForestClassifier
+model = RandomForestClassifier(criterion='gini', max_depth=10000)
+    
+
+import numpy as np
+'''X_train[0].drop(row='')'''
+data_Xtrain = pd.DataFrame(X_train)
+data_Xtrain = data_Xtrain.drop(data_Xtrain, axis=0)
+
+A = np.reshape(data_Xtrain, (-1, 2)) # (880, 2)
+B = np.reshape(y_train[:68], (-1, 2)) # (3524, 2)
+dataFrameB = pd.DataFrame(B)
+
+# dataFrameB = dataFrameB.drop(labels=1)
+for i in range(4):
+    dataFrameB = dataFrameB.drop(labels=i)
+B = dataFrameB
+model.fit(A, B)
+print(type(B))
+J = np.reshape(y_test[:272], (-1))
+dataFrameJ = pd.DataFrame(J)
+for  i in range(24):
+    dataFrameJ = dataFrameJ.drop(labels=i)
+dataFrameJ_ = pd.DataFrame(np.reshape(dataFrameJ, (-1,2)))
+dataFrameI_ = pd.DataFrame(np.reshape(X_test,( -1,2)))
+
+
+'''RESULT'''
+model.predict(dataFrameJ_)
+'''
+[[1312  279]
+ [   0    0]
+ [   0    0]
+ ...
+ [1312  279]
+ [1312  279]
+ [1312  279]]
+'''
+
+model.predict(dataFrameI_)
+'''
+[[0 0]
+ [0 0]
+ [0 0]
+ ...
+ [0 0]
+ [0 0]
+ [0 0]]
+'''
+
+print(model.score(X_train, y_train))
